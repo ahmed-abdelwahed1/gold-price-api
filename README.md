@@ -4,7 +4,7 @@ A real-time gold price tracking API that provides current gold prices in EGP and
 
 ## Features
 
-- Real-time gold prices from iSagha market
+- Real-time gold prices
 - Multiple karat options (24K, 22K, 21K, 18K, 14K)
 - Gold pound and ounce prices
 - Automatic price updates every 15 minutes
