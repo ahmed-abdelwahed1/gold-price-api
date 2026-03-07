@@ -49,6 +49,39 @@ def test_get_gold_prices_with_mocked_html():
         assert prices['24_karat']['price'] == 3500.0
         assert prices['24_karat']['currency'] == 'EGP'
 
+def test_get_gold_prices_skips_carat_number():
+    """Test that karat numbers are not mistakenly captured as prices.
+    When the page text contains karat numbers adjacent to the karat label
+    (e.g. 'عيار 24 عيار 22 3500'), the actual price must be returned,
+    not the karat number itself."""
+    mock_html = '''
+    <html>
+    <body>
+    عيار 24 عيار 22 عيار 21
+    3500 3200 3000
+    </body>
+    </html>
+    '''
+
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.content = mock_html.encode('utf-8')
+    mock_response.raise_for_status = Mock()
+
+    with patch('requests.get', return_value=mock_response):
+        prices = get_gold_prices()
+
+        assert isinstance(prices, dict)
+        assert '24_karat' in prices
+        # The price must not be a karat number (<=24); it must be the actual price
+        assert prices['24_karat']['price'] > 100, (
+            f"Expected a real price > 100, got {prices['24_karat']['price']} "
+            "(looks like a karat number was captured instead of the price)"
+        )
+        assert prices['24_karat']['price'] == 3500.0
+        assert prices['24_karat']['currency'] == 'EGP'
+
+
 def test_get_gold_prices_backward_compatibility():
     """Test that old format with 'بيع' still works"""
     # Mock HTML content with old format

@@ -33,27 +33,33 @@ def get_gold_prices():
         gold_prices = {}
         
         patterns = {
-            '24_karat': r'عيار\s*24[^\d]*([\d,\.]+)',
-            '22_karat': r'عيار\s*22[^\d]*([\d,\.]+)',
-            '21_karat': r'عيار\s*21[^\d]*([\d,\.]+)',
-            '18_karat': r'عيار\s*18[^\d]*([\d,\.]+)',
-            '14_karat': r'عيار\s*14[^\d]*([\d,\.]+)',
-            'gold_pound': r'جنيه\s*ذهب[^\d]*([\d,\.]+)',
-            'gold_ounce_usd': r'أوقية\s*الذهب[^\d]*([\d,\.]+)'
+            '24_karat': r'عيار\s*24',
+            '22_karat': r'عيار\s*22',
+            '21_karat': r'عيار\s*21',
+            '18_karat': r'عيار\s*18',
+            '14_karat': r'عيار\s*14',
+            'gold_pound': r'جنيه\s*ذهب',
+            'gold_ounce_usd': r'أوقية\s*الذهب'
         }
         
         for name, pattern in patterns.items():
-            match = re.search(pattern, page_text)
-            if match:
-                price_str = match.group(1).replace(',', '')
-                try:
-                    price = float(price_str)
-                    if 'usd' in name:
-                        gold_prices[name] = {"price": price, "currency": "USD"}
-                    else:
-                        gold_prices[name] = {"price": price, "currency": "EGP"}
-                except ValueError:
-                    continue
+            karat_match = re.search(pattern, page_text)
+            if karat_match:
+                remaining_text = page_text[karat_match.end():]
+                for num_match in re.finditer(r'([\d,\.]+)', remaining_text):
+                    price_str = num_match.group(1).replace(',', '').strip('.')
+                    try:
+                        price = float(price_str)
+                        # Valid prices are always well above karat numbers (<=24);
+                        # skip any number that looks like a karat count
+                        if price > 100:
+                            if 'usd' in name:
+                                gold_prices[name] = {"price": price, "currency": "USD"}
+                            else:
+                                gold_prices[name] = {"price": price, "currency": "EGP"}
+                            break
+                    except ValueError:
+                        continue
         
         return gold_prices
         
